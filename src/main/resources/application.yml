@@ -19,7 +19,7 @@ logging:
     org.hibernate.sql: debug
 
 kakao:
-  rest-api-key: c7b3d4c354d87e9267f8e8e1c2bf252f
+  rest-api-key: ${KAKAO_REST_API_KEY}
   base-url: https://dapi.kakao.com
 
 
