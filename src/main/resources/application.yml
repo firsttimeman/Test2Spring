@@ -20,6 +20,6 @@ logging:
 
 kakao:
   rest-api-key: ${KAKAO_REST_API_KEY}
-  base-url: https://dapi.kakao.com
+  base-url: https://dapi.kakaooooo.com
 
 
