@@ -1,19 +1,24 @@
 package test2.Test2Spring.error;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolationException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final ObjectMapper objectMapper;
 
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ErrorResponse> handleApiException(ApiException e) {
@@ -72,7 +77,7 @@ public class GlobalExceptionHandler {
     }
 
 
-    @ExceptionHandler(ResourceAccessException.class) // 정리가 필요함 처음해보는 예외처리
+    @ExceptionHandler(ResourceAccessException.class)
     public ResponseEntity<ErrorResponse> handleNetwork(ResourceAccessException e) {
         String cause = (e.getMostSpecificCause() != null) ? String.valueOf(e.getMostSpecificCause())
                 : "NetworkError";
@@ -81,13 +86,13 @@ public class GlobalExceptionHandler {
 
         String msg;
         if (cause.contains("UnknownHost") || cause.contains("UnresolvedAddress")) {
-            msg = "업스트림 호스트를 찾을 수 없습니다.";
+            msg = "api 호스트를 찾을 수 없습니다.";
         } else if (cause.contains("ConnectException")) {
-            msg = "업스트림에 연결할 수 없습니다.";
+            msg = "api 연결할 수 없습니다.";
         } else if (cause.contains("Timeout")) {
-            msg = "업스트림 요청이 타임아웃되었습니다.";
+            msg = "api 요청이 타임아웃되었습니다.";
         } else {
-            msg = "업스트림 네트워크 오류(타임아웃/연결 실패)";
+            msg = "api 네트워크 오류(타임아웃/연결 실패)";
         }
 
         ErrorResponse response = ErrorResponse.builder()
@@ -100,6 +105,35 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(status).body(response);
 
+    }
+
+
+    @ExceptionHandler(RestClientResponseException.class)
+    public ResponseEntity<ErrorResponse> handleRestClient(RestClientResponseException e) {
+        String raw = e.getResponseBodyAsString();
+
+        String msg;
+        if (raw.trim().startsWith("{")) {
+
+            try {
+                JsonNode node = objectMapper.readTree(raw);
+                msg = node.has("message") ? node.get("message").asText() : raw;
+            } catch (Exception ex) {
+                msg = raw;
+            }
+        } else {
+            msg = raw;
+        }
+
+        ErrorResponse response = ErrorResponse.builder()
+                .status(e.getRawStatusCode())
+                .error("KakaoApiError")
+                .message(msg)
+                .details(List.of(raw))
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(e.getRawStatusCode()).body(response);
     }
 
 
