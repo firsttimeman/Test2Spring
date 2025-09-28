@@ -22,4 +22,10 @@ kakao:
   rest-api-key: ${KAKAO_REST_API_KEY}
   base-url: https://dapi.kakao.com
 
+naver:
+  base-url: https://openapi.naver.com
+  client-id: 73dIeysEyxaupJcnPwVX
+  client-secret: ${NAVER_REST_API_KEY}
+
+
 
