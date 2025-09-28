@@ -11,7 +11,6 @@ import test2.Test2Spring.service.KeywordService;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
-@ActiveProfiles("test")
 public class KeywordServiceTest {
 
     @Autowired

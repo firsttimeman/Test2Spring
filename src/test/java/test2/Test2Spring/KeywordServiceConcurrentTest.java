@@ -18,7 +18,6 @@ import java.util.stream.IntStream;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @SpringBootTest
-@ActiveProfiles("test")
 class KeywordServiceConcurrentTest {
 
     @Autowired KeywordService keywordService;
@@ -44,7 +43,7 @@ class KeywordServiceConcurrentTest {
         for (int i = 0; i < threads; i++) {
             pool.submit(() -> {
                 try {
-                    start.await(); // 동시에 시작
+                    start.await();
                     keywordService.increaseCount(raw);
                 } catch (Exception e) {
                     e.printStackTrace();
