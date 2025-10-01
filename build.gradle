@@ -34,6 +34,21 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+// AOP (어노테이션 + Aspect 적용)
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+	// Redisson (Redis 분산락용)
+	implementation 'org.redisson:redisson-spring-boot-starter:3.27.2' // 버전은 최신으로 맞춰도 OK
+
+	// (선택) Actuator – 헬스/메트릭 확인용
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+
+//	 (테스트용) 내장 Redis 또는 Testcontainers (택1)
+	 testImplementation 'it.ozimov:embedded-redis:0.7.2'     // 로컬 간단 테스트용
+//	 testImplementation 'org.testcontainers:testcontainers:1.20.1'
+//	 testImplementation 'org.testcontainers:redis:1.20.1'
+
 	//.env 파일 읽기 만들기
 	implementation("me.paulschwarz:spring-dotenv:4.0.0")
 
