@@ -26,6 +26,7 @@ public class KeyWordCount {
     public KeyWordCount(String keyword) {
         this.keyword = keyword;
         this.count = 0L;
+        increase();
     }
 
     public void increase() {

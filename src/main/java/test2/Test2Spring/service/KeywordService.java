@@ -24,43 +24,14 @@ public class KeywordService {
     @DistributeLock(key = "#raw")
     @Transactional
     public void increaseCount(String raw) {
-//        String keyword = normalize(raw);
-//        if (keyword.isEmpty()) return;
-//
-//
-//        if (repository.increment(keyword) > 0) return;
-//
-//        try {
-//            insertKeywordIfAbsent(keyword); // count=1 로 INSERT
-//            return;
-//        } catch (DataIntegrityViolationException e) {
-//            e.printStackTrace();
-//        }
-//
-//
-//        repository.increment(keyword);
-
         String keyword = normalize(raw);
         if (keyword.isEmpty()) return;
-
         repository.findByKeyword(keyword)
                 .ifPresentOrElse(
                         KeyWordCount::increase,   // 있으면 count++
                         () -> repository.save(new KeyWordCount(keyword)) // 없으면 새로 insert
                 );
     }
-
-//    @Transactional
-//    public void insertKeywordIfAbsent(String keyword) {
-//        KeyWordCount count = new KeyWordCount(keyword);
-//        count.increase();
-//        repository.saveAndFlush(count);
-//    }
-
-
-
-
-
 
     @Transactional
     public List<PopularKeywordResponse> getTop10KeyWords() {
