@@ -1,6 +1,8 @@
 package test2.Test2Spring.service;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
@@ -9,10 +11,13 @@ import reactor.util.retry.Retry;
 import test2.Test2Spring.dto.KakaoBlogResponse;
 import test2.Test2Spring.dto.NaverBlogResponse;
 
+
+
 import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BlogSearchService {
 
     private final KeywordService keywordService;
@@ -21,34 +26,34 @@ public class BlogSearchService {
     private final WebClient naverWebClient;
 
 
-//    public KakaoBlogResponse searchBlog(String query, String sort, int page, int size) {
-//
-//
-//            KakaoBlogResponse response = kakaoRestClient.get()
-//                    .uri(uri -> uri.path("/v2/search/blog")
-//                            .queryParam("query", query)
-//                            .queryParam("sort", sort)
-//                            .queryParam("page", page)
-//                            .queryParam("size", size)
-//                            .build())
-//                    .retrieve()
-//                    .body(KakaoBlogResponse.class);
-//
-//            keywordService.increaseCount(query);
-//
-//            return response;
-//
-//
-//    }
 
+
+    @CircuitBreaker(name = "kakaoBlogSearch", fallbackMethod = "fallbackToNaver")
     public Mono<Object> searchBlog (String query, String sort, int page, int size) {
         keywordService.increaseCount(query);
 
         return callKakao(query, sort, page, size)
-                .cast(Object.class)
-                .onErrorResume(ex -> callNaver(query, sort, page, size).cast(Object.class)); // 에러로 보내겠다느건가? 그리고 왜
-        //오브젝트로 보내지? 어디가 받을지 몰라서 카카오나? 네이버?
+                .cast(Object.class);
 
+    }
+
+    /**
+     * Kakao 호출 실패 또는 서킷 OPEN 상태일 때 호출되는 fallback 메서드.
+     *
+     * 시그니처 규칙:
+     *  - 원래 메서드(searchBlog)의 파라미터 + 마지막에 Throwable
+     *  - 리턴 타입은 원래 메서드와 동일 (Mono<Object>)
+     */
+    private Mono<Object> fallbackToNaver(String query,
+                                         String sort,
+                                         int page,
+                                         int size,
+                                         Throwable t) {
+
+        // 원하면 여기서 로그도 찍을 수 있음:
+         log.warn("Kakao search failed, fallback to Naver. cause={}", t.toString());
+        return callNaver(query, sort, page, size)
+                .cast(Object.class);
     }
 
 
@@ -62,22 +67,19 @@ public class BlogSearchService {
                         .queryParam("size", size)
                         .build())
                 .retrieve()
-                // 4xx/5xx 를 예외로 변환 (메시지는 그대로 담아줌)
                 .onStatus(s -> s.is4xxClientError() || s.is5xxServerError(),
-                        resp -> resp.createException()) // 처음보는데?
-                .bodyToMono(KakaoBlogResponse.class) // 이게 뭐자?????
-                // 네트워크 지연 방지용 타임아웃
+                        resp -> resp.createException())
+                .bodyToMono(KakaoBlogResponse.class)
                 .timeout(Duration.ofSeconds(2))
-                // 일시적 네트워크 에러 재시도 (최대 2회, 지수 백오프)
                 .retryWhen(Retry.backoff(2, Duration.ofMillis(200))
-                        .filter(ex -> ex instanceof WebClientRequestException)); // 처음보는데 설명좀
+                        .filter(ex -> ex instanceof WebClientRequestException));
 
     }
 
 
     private Mono<NaverBlogResponse> callNaver(String query, String sort, int page, int size) {
 
-        int start = (page - 1) * size + 1;            // 1-based
+        int start = (page - 1) * size + 1;
         String naverSort = "recency".equals(sort) ? "date" : "sim";
 
         return naverWebClient.get()

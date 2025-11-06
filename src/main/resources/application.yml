@@ -33,5 +33,19 @@ naver:
   client-secret: ${NAVER_REST_API_KEY}
 
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      kakaoBlogSearch:
+        register-health-indicator: true
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10            # 최근 10번 기준으로 실패율 계산
+        minimum-number-of-calls: 5         # 최소 5번은 호출돼야 통계 시작
+        failure-rate-threshold: 50         # 실패율 50% 이상 → OPEN
+        wait-duration-in-open-state: 5s    # OPEN 상태 유지 시간
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+
+
 
 
