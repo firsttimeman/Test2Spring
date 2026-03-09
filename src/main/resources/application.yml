@@ -28,6 +28,12 @@ naver:
   client-id: 73dIeysEyxaupJcnPwVX
   client-secret: ${NAVER_REST_API_KEY}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
 
 resilience4j:
   circuitbreaker:
