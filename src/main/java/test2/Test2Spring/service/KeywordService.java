@@ -18,20 +18,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class KeywordService {
     private final KeywordCountRepository repository;
+    private final KeywordLockService keywordLockService;
 
 
-
-    @DistributeLock(key = "#raw")
-    @Transactional
     public void increaseCount(String raw) {
         String keyword = normalize(raw);
         if (keyword.isEmpty()) return;
-        repository.findByKeyword(keyword)
-                .ifPresentOrElse(
-                        KeyWordCount::increase,   // 있으면 count++
-                        () -> repository.save(new KeyWordCount(keyword)) // 없으면 새로 insert
-                );
+
+        keywordLockService.increaseCountWithLock(keyword);
     }
+
 
     @Transactional
     public List<PopularKeywordResponse> getTop10KeyWords() {
