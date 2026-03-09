@@ -27,6 +27,13 @@ public interface KeywordCountRepository extends JpaRepository<KeyWordCount, Long
     int increment(@Param("keyword") String keyword);
 
 
-
+    @Modifying
+    @Transactional
+    @Query(value = """
+        INSERT INTO keyword_count(keyword, count)
+        VALUES (:keyword, 1)
+        ON DUPLICATE KEY UPDATE count = count + 1
+        """, nativeQuery = true)
+    void upsertIncrement(@Param("keyword") String keyword);
 
 }
